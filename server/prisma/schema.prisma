@@ -1,0 +1,97 @@
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  relationMode = "prisma"
+}
+
+model User{
+  id String @id @default(uuid())
+  email String @unique 
+  password String
+  role Role @default(CONSUMER)
+  isVerified Boolean @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime @map("deleted_at")
+  profile Profile?
+  salonOwner SalonOwner?
+  saloonStaff SalonStaff?
+  otpVerification OTPVerification?
+}
+// Otp
+model OTPVerification{
+  id String @id @default(uuid())
+  userId String @unique
+  otp String 
+  expiresAt DateTime
+  verified Boolean @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user User @relation(fields: [userId],references: [id],onDelete: Cascade)
+}
+// Profile Model
+model Profile{
+  id String @id @default(uuid())
+  userId String @unique
+  user User @relation(fields: [userId],references: [id])
+  firstName String?
+  lastName String?
+  phoneNumber String?
+  profilePicture String?
+  preferences Json?
+  notificationSettings Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+// Salon schema design
+model Salon{
+  id String @id @default(uuid())
+  name String
+  address String
+  city String
+  state String
+  zipCode String
+  phoneNumber String
+  isVerified Boolean @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  salonOwner SalonOwner?  
+  salonStaff SalonStaff[]
+}
+
+// Owner schema
+
+model SalonOwner {
+  id String @id @default(uuid())
+  userId String @unique
+  salonId String @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user User @relation(fields: [userId],references: [id])
+  salon Salon @relation(fields: [salonId],references: [id])
+}
+model SalonStaff {
+  id String @id @default(uuid())
+  userId String @unique
+  salonId String @unique
+  name String
+  specialization String?
+  schedule    Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user User @relation(fields: [userId],references: [id])
+  salon Salon @relation(fields: [salonId],references: [id])
+}
+
+// Role enum
+enum Role {
+  ADMIN       // Platform admin
+  SALON_OWNER // Salon owner
+  STAFF       // Salon staff
+  CONSUMER    // Consumer
+}
